@@ -4,7 +4,7 @@
 #include "../server/Config.h"
 #include <string>
 #include <vector>
-
+#include <nlohmann/json.hpp>
 #define MAX_FILESIZE 100 * 1024 * 1024
 
 namespace server {
@@ -21,10 +21,9 @@ private:
 	uint32_t _fileSize;
 
 	uint32_t receiveFileSize();
-	std::string receiveFileContent();
-	bool scanFile(const std::string &content);
-	void sendResult(bool isInfected,
-									const std::vector<std::string> &foundPatterns);
+	nlohmann::json receiveAndScanFileContent();
+	std::vector<std::string> scanChunk(const std::string &content);
+	void sendResult(const nlohmann::json& threatInfo);
 };
 
 } // namespace server
