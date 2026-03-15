@@ -1,0 +1,8 @@
+build/
+av_server
+av_client
+unit_tests
+
+*.so
+*.a
+
