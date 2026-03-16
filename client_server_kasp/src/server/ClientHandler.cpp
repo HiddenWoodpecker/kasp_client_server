@@ -67,7 +67,8 @@ nlohmann::json ClientHandler::receiveAndScanFileContent() {
 
 		auto foundInChunk = scanChunk(chunk);
 
-				if (!foundInChunk.empty()) {
+		std::cout << "[ClientHandler::receiveAndScanFileContent] scannding chunk " << toRead << " bytes..." << std::endl;
+		if (!foundInChunk.empty()) {
 			threatInfo["threats_found"] = true;
 			threatInfo["status"] = "INFECTED";
 			for (const auto& pattern : foundInChunk) {
@@ -76,6 +77,7 @@ nlohmann::json ClientHandler::receiveAndScanFileContent() {
 		}
 
 		totalReceived += received;
+		usleep(1000000);
 	}
 
 

@@ -61,13 +61,10 @@ std::string Client::readFile(const std::string &filePath) {
 
 bool Client::sendFileContent(const std::string &content) {
 	uint32_t size = htonl(static_cast<uint32_t>(content.size()));
-	// std::cout << "sendFileContent size = " << size << std::endl;
 	if (_socket.send(&size, sizeof(size)) <= 0) {
 		return false;
 	}
 	ssize_t sent = _socket.send(content.c_str(), content.size());
-	// std::cout << "[client] sizeB " << size << "content " << content << "on fd "
-	// << _socket.getFileDescriptor() << std::endl;
 	return sent == static_cast<ssize_t>(content.size());
 }
 
@@ -77,7 +74,7 @@ ScanResponse Client::receiveResponse() {
 		return ScanResponse{false, "failed to receive response", {}};
 	}
 	uint32_t size = ntohl(header.size);
-	std::cout << "[Client] got size = " << size << std::endl;
+	std::cout << " got size = " << size << std::endl;
 	if (size == 0 || size > 1024 * 1024) {
 		return ScanResponse{false, "invalid response size", {}};
 	}
