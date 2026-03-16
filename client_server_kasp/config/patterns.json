@@ -1,6 +1,8 @@
 {
     "patterns": [
         "VIRUS",
-        "GOVNO"
+        "EVILSCRIPT",
+        "KEYLOGGER",
+        "CRYPTOMINER"
     ]
 }
