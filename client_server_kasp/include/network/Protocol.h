@@ -13,12 +13,6 @@ struct MessageHeader {
 	explicit MessageHeader(uint32_t s) : size(s) {}
 };
 
-enum class MessageType : uint8_t {
-	fileData = 1,
-	scanResult = 2,
-	statsRequest = 3,
-	statsResponse = 4
-};
 
 struct ScanResult {
 	bool isInfected;

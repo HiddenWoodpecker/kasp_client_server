@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include <map>
 #define MAX_FILESIZE 100 * 1024 * 1024
-
+//100 mb
 namespace server {
 
 class ClientHandler {
@@ -20,10 +21,9 @@ private:
 	Config _config;
 	uint32_t _fileSize;
 
-	uint32_t receiveFileSize();
-	nlohmann::json receiveAndScanFileContent();
-	std::vector<std::string> scanChunk(const std::string &content);
-	void sendResult(const nlohmann::json& threatInfo);
-};
+	std::string receiveFile();
+	std::map<std::string, int> scanFile(const std::string& content);
+	void sendResult(const bool isInfected, const std::map<std::string, int>&);
 
+};
 } // namespace server

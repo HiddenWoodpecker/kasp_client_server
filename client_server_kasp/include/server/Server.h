@@ -3,10 +3,20 @@
 #include "../network/Socket.h"
 #include "../server/Config.h"
 #include <atomic>
+#include <mutex>
 #include <csignal>
 #include <vector>
+#include <string>
+#include <map>
 
 namespace server {
+
+struct Statistics {
+	uint32_t infectedFiles;
+	std::map<std::string, int> foundPatterns;
+
+	Statistics() : infectedFiles(0), foundPatterns(){};
+};
 
 class Server {
 public:
@@ -32,6 +42,7 @@ private:
 	// ссылка на инстанс для обработки сигналов
 	static Server *_instance;
 	static void signalHandler(int signal);
+	static struct Statistics stats;
 };
 
 } // namespace server

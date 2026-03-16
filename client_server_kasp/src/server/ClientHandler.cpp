@@ -10,101 +10,104 @@ ClientHandler::ClientHandler(net::Socket socket, const Config &config)
 	: _socket(std::move(socket)), _config(config), _fileSize(0) {}
 
 void ClientHandler::run() {
-	std::cout << "[ClientHandler] new client connection" << std::endl;
+	std::cout << "[ClientHandler] New client connection" << std::endl;
 
 	try {
-		_fileSize = receiveFileSize();
-		if (_fileSize == 0) {
+
+		std::string content = receiveFile();
+		if (content.empty()) {
+			std::cerr << "[ClientHandler] Empty file received" << std::endl;
 			return;
 		}
-		nlohmann::json threatInfo = receiveAndScanFileContent();
-		sendResult(threatInfo);	
 
-	} 
-	catch (const std::exception &e) {
-		std::cerr << "[ClientHandler] error: " << e.what() << std::endl;
+		std::cout << "[ClientHandler] Received " << content.size() << " bytes" << std::endl;
+
+		auto scanResults = scanFile(content);
+		bool isInfected = !scanResults.empty();
+		sendResult(isInfected, scanResults);
+
+		std::cout << "[ClientHandler] Client handled successfully" << std::endl;
+	} catch (const std::exception& e) {
+		std::cerr << "[ClientHandler] Error: " << e.what() << std::endl;
 	}
 }
 
-uint32_t ClientHandler::receiveFileSize() {
+
+std::string ClientHandler::receiveFile() {
 	protocol::MessageHeader header;
-	auto recvRes = _socket.recvT(header.size);
-	if (recvRes <= 0) {
-		std::cerr << "[ClientHandler] failed to receive file size header, result: " << recvRes << std::endl;
-		return 0;
-	}
+	_socket.recvT(header.size);
 
 	uint32_t size = ntohl(header.size);
-	if (size > MAX_FILESIZE) {
-		std::cerr << "[ClientHandler] File size too large: " << size << " bytes" << std::endl;
-		return 0;
+	if (size == 0 || size > MAX_FILESIZE) { 
+		return "";
 	}
 
-	return size;
-}
-
-nlohmann::json ClientHandler::receiveAndScanFileContent() {
-
-	const size_t chunkSize = 4096; 
-	std::string buffer(chunkSize, '\0');
+	std::string buffer(size, '\0');
 	size_t totalReceived = 0;
-	nlohmann::json threatInfo; 
-	threatInfo["status"] = "OK"; 
-	threatInfo["threats_found"] = false;
-	threatInfo["patterns"] = nlohmann::json::array(); 
 
-	std::cout << "[ClientHandler::receiveAndScanFileContent] Starting to receive and scan " << _fileSize << " bytes..." << std::endl;
-
-	while (totalReceived < _fileSize) {
-		size_t toRead = std::min(chunkSize, static_cast<size_t>(_fileSize - totalReceived));
-		ssize_t received = _socket.recv(&buffer[0], toRead);
-
+	while (totalReceived < size) {
+		ssize_t received = _socket.recv(&buffer[totalReceived], size - totalReceived);
 		if (received <= 0) {
-			std::cerr << "[ClientHandler::receiveAndScanFileContent] Receive failed at total: " << totalReceived << "/" << _fileSize << std::endl;
 			break;
 		}
-		std::string chunk = buffer.substr(0, received);
-
-		auto foundInChunk = scanChunk(chunk);
-
-		std::cout << "[ClientHandler::receiveAndScanFileContent] scannding chunk " << toRead << " bytes..." << std::endl;
-		if (!foundInChunk.empty()) {
-			threatInfo["threats_found"] = true;
-			threatInfo["status"] = "INFECTED";
-			for (const auto& pattern : foundInChunk) {
-				threatInfo["patterns"].push_back(pattern);
-			}
-		}
-
 		totalReceived += received;
+	}
+
+	return buffer;
+}
+
+//такая реализация позволяет передавать огромные файлы, но возникает проблема, когда паттерн разибивается чанками
+//UPD: решено было изменить на сканирование полного файла, ограничив размер файла, так как recv из сокета все равно будет читать чанками + упрощает реализацию
+std::map<std::string, int> ClientHandler::scanFile(const std::string& content) {
+	std::cout << "[ClientHandler] Scanning file for patterns..." << std::endl;
+
+	std::map<std::string, int> results; 
+
+	for (const auto& pattern : _config.getPatterns()) {
+		int count = 0;
+		size_t pos = 0;
+
+		while ((pos = content.find(pattern, pos)) != std::string::npos) {
+			++count;
+			pos += pattern.length(); 
+		}
+		if (count > 0) {
+			results[pattern] = count;
+			std::cout << "[ClientHandler] Found pattern '" << pattern << "' " << count << " time(s)" << std::endl;
+		}
 		usleep(1000000);
 	}
 
-
-	std::cout << "[ClientHandler::receiveAndScanFileContent] Finished receiving and scanning." << std::endl;
-	return threatInfo;
+	return results;
 }
 
-std::vector<std::string> ClientHandler::scanChunk(const std::string &chunk) {
-	std::vector<std::string> foundPatterns;
-	for (const auto& pattern : _config.getPatterns()) {
-	    if (chunk.find(pattern) != std::string::npos) {
-	        std::cout << "[ClientHandler::scanChunk] Found pattern '" << pattern << "' in chunk." << std::endl;
-	        foundPatterns.push_back(pattern);
-	    }
+
+void ClientHandler::sendResult(bool isInfected, const std::map<std::string, int>& foundPatterns) {
+	nlohmann::json result;
+	result["status"] = isInfected ? "INFECTED" : "OK";
+
+	nlohmann::json patternsJson = nlohmann::json::array();
+	for (const auto& [pattern, count] : foundPatterns) {
+		nlohmann::json p;
+		p["name"] = pattern;
+		p["count"] = count;
+		patternsJson.push_back(p);
 	}
-	return foundPatterns;
-}
+	result["patterns"] = patternsJson;
 
-void ClientHandler::sendResult(const nlohmann::json& threatInfo) {
-	std::string jsonString = threatInfo.dump();
+	std::string jsonString = result.dump();
+	// std::cout<<"JSON string "<< jsonString <<std::endl;
 
 	protocol::MessageHeader header(static_cast<uint32_t>(jsonString.size()));
 	_socket.sendT(htonl(header.size));
 	_socket.send(jsonString.c_str(), htonl(jsonString.size()));
 
-	std::cout << "[ClientHandler] Sent result status: " << threatInfo["status"] << std::endl;
-	std::cout << "[ClientHandler] Sent result: " << threatInfo["patterns"] << std::endl;
+	std::cout<<"[Server] ";
+	if (isInfected) {
+		for (const auto& [pattern, count] : foundPatterns) {
+			std::cout << "  - Pattern '" << pattern << "' found " << count<< std::endl;
+		}
+	}
 }
 
 } // namespace server
