@@ -12,8 +12,6 @@ int main(int argc, char *argv[]) {
 	server::Config config;
 	config.setConfigPath(argv[1]);
 	config.setPort(static_cast<uint16_t>(std::stoi(argv[2])));
-	// TODO: fifo
-	config.setFifoPath("/tmp/stats.fifo");
 	if (!config.load(config.getConfigPath())) {
 		std::cerr << "failed to load config" << std::endl;
 		return 1;

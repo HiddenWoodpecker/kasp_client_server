@@ -17,16 +17,12 @@ public:
 	uint16_t getPort() const { return _port; }
 	void setPort(uint16_t port) { _port = port; }
 
-	const std::string &getFifoPath() const { return _fifoPath; }
-	void setFifoPath(const std::string &path) { _fifoPath = path; }
-
 	const std::vector<std::string> &getPatterns() const { return _patterns; }
 	void setPatterns(const std::vector<std::string> &patterns) {_patterns = patterns;}
 
 private:
 	std::string _configPath;
 	uint16_t _port;
-	std::string _fifoPath;
 	std::vector<std::string> _patterns;
 };
 

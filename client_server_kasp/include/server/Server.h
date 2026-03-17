@@ -105,7 +105,6 @@ private:
 
 	void setupSharedMemory();		   // Создание shared memory
 	void statisticsLoop();			  // Поток для вывода статистики
-	void printStatistics();  
 
 	// ссылка на инстанс для обработки сигналов
 	static Server *_instance;

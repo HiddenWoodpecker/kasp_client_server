@@ -35,39 +35,39 @@ void ClientHandler::run() {
 }
 
 void ClientHandler::updateStatistics(const std::map<std::string, int>& results) {
-    if (!_stats) {
-        std::cerr << "[Worker " << getpid() << "] _stats is null!" << std::endl;
-        return;
-    }
-    
-    // Считаем общее количество угроз
-    int totalThreats = 0;
-    for (const auto& [_, count] : results) {
-        totalThreats += count;
-    }
-    
-    bool infected = !results.empty();
-    
-    std::cout << "[Worker " << getpid() << "] Updating stats: infected=" 
-              << infected << ", threats=" << totalThreats << std::endl;
-    
-    // Обновляем основные счетчики (атомарно)
-    _stats->addFile(infected, totalThreats);
-    
-    // Обновляем счетчики паттернов
-    for (const auto& [pattern, count] : results) {
-        int index = _stats->findPattern(pattern);
-        if (index >= 0) {
-            _stats->addPattern(index, count);
-            std::cout << "[Worker " << getpid() << "] Pattern '" << pattern 
-                      << "' +" << count << std::endl;
-        }
-    }
+	if (!_stats) {
+		std::cerr << "[Worker " << getpid() << "] _stats is null!" << std::endl;
+		return;
+	}
+	
+	// Считаем общее количество угроз
+	int totalThreats = 0;
+	for (const auto& [_, count] : results) {
+		totalThreats += count;
+	}
+	
+	bool infected = !results.empty();
+	
+	std::cout << "[Worker " << getpid() << "] Updating stats: infected=" 
+			  << infected << ", threats=" << totalThreats << std::endl;
+	
+	// Обновляем основные счетчики (атомарно)
+	_stats->addFile(infected, totalThreats);
+	
+	// Обновляем счетчики паттернов
+	for (const auto& [pattern, count] : results) {
+		int index = _stats->findPattern(pattern);
+		if (index >= 0) {
+			_stats->addPattern(index, count);
+			std::cout << "[Worker " << getpid() << "] Pattern '" << pattern 
+					  << "' +" << count << std::endl;
+		}
+	}
 }
 
 std::string ClientHandler::receiveFile() {
 	uint32_t size;
-	_socket.recvT(size);
+	_socket.recv(&size, sizeof(size));
 	size = ntohl(size);
 	if (size == 0 || size > MAX_FILESIZE) { 
 		return "";
@@ -101,7 +101,7 @@ std::map<std::string, int> ClientHandler::scanFile(const std::string& content) {
 			results[pattern] = count;
 			std::cout << "[ClientHandler] Found pattern '" << pattern << "' " << count << std::endl;
 		}
-		usleep(1000000);
+		// usleep(1000000);
 	}
 
 	return results;
@@ -125,7 +125,7 @@ void ClientHandler::sendResult(bool isInfected, const std::map<std::string, int>
 	// std::cout<<"JSON string "<< jsonString <<std::endl;
 
 	uint32_t size = htonl(static_cast<uint32_t>(jsonString.size()));
-	_socket.sendT(size);
+	_socket.send(&size, sizeof(size));
 	_socket.send(jsonString.c_str(), size);
 
 	std::cout<<"[Server] ";

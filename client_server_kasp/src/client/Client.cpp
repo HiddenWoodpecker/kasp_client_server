@@ -62,11 +62,10 @@ bool Client::sendFileContent(const std::string &content) {
 
 ScanResponse Client::receiveResponse() {
 	uint32_t size;
-	if (_socket.recvT(size) <= 0) {
+	if (_socket.recv(&size, sizeof(size)) <= 0) {
 		return ScanResponse{false, "failed to receive response", {}};
 	}
 	size = ntohl(size);
-	std::cout << "[Client] got response size = " << size << std::endl;
 	if (size == 0 || size > 1024 * 1024) {
 		return ScanResponse{false, "invalid response size", {}};
 	}
@@ -79,28 +78,29 @@ ScanResponse Client::receiveResponse() {
 	try {
 	nlohmann::json response = nlohmann::json::parse(jsonString);
 
-        ScanResponse result;
-        result.success = true;
-        result.status = response.value("status", "UNKNOWN");
+	ScanResponse result;
+	result.success = true;
+	result.status = response.value("status", "UNKNOWN");
 
-        if (response.contains("patterns") && response["patterns"].is_array()) {
-            for (const auto& item : response["patterns"]) {
-                if (item.is_object() && item.contains("name")) {
-                    std::string name = item.value("name", "");
-                    int count = item.value("count", 1); 
-                    if (!name.empty()) {
-			name.append(" count :" + std::to_string(count)); 
-                        result.patterns.push_back(name);
-                    }
-                }
-            }
-        }
+	if (response.contains("patterns") && response["patterns"].is_array()) {
+		for (const auto& item : response["patterns"]) {
+			if (item.is_object() && item.contains("name")) {
+				std::string name = item.value("name", "");
+				int count = item.value("count", 1); 
+				if (!name.empty()) {
+					name.append(" count :" + std::to_string(count)); 
+					result.patterns.push_back(name);
+				}
+			}
+		}
+	}
 
-        return result;
-    } catch (const std::exception& e) {
-        std::cerr <<e.what() << std::endl;
-        return ScanResponse{false, "Failed to parse response", {}}; 
-    }}
+	return result;
+	} 
+	catch (const std::exception& e) {
+		std::cerr <<e.what() << std::endl;
+		return ScanResponse{false, "Failed to parse response", {}}; 
+	}}
 
 void Client::disconnect() {
 	if (_connected) {

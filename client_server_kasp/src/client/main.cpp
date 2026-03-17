@@ -3,18 +3,17 @@
 #include <cstdlib>
 
 int main(int argc, char* argv[]) {
-	if (argc != 4) {
-		std::cerr << "Usage: " << argv[0] << " <file_path> <host> <port>" << std::endl;
+	if (argc != 3) {
+		std::cerr << "Usage: " << argv[0] << " <file_path> <port>" << std::endl;
 		return 1;
 	}
 	
 	std::string filePath = argv[1];
-	std::string host = argv[2];
-	uint16_t port = static_cast<uint16_t>(std::stoi(argv[3]));
+	uint16_t port = static_cast<uint16_t>(std::stoi(argv[2]));
 	
 	client::Client client;
 	
-	if (!client.connect(host, port)) {
+	if (!client.connect("127.0.0.1", port)) {
 		return 1;
 	}
 	

@@ -8,7 +8,6 @@
 #include <nlohmann/json.hpp>
 #include <map>
 #define MAX_FILESIZE 100 * 1024 * 1024
-//100 mb
 namespace server {
 
 class ClientHandler {
@@ -27,5 +26,6 @@ private:
 	std::map<std::string, int> scanFile(const std::string& content);
 	void sendResult(const bool isInfected, const std::map<std::string, int>&);
 	void updateStatistics(const std::map<std::string, int>& results);
+	
 };
 } // namespace server

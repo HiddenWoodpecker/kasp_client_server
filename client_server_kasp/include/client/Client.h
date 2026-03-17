@@ -14,7 +14,6 @@ struct ScanResponse {
 	ScanResponse() : success(false) {}
 	ScanResponse(bool s, std::string st, std::vector<std::string> p)
 			: success(s), status(std::move(st)), patterns(std::move(p)) {}
-	//избегаем копирования с помощью move секмантики
 };
 
 class Client {

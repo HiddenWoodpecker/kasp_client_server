@@ -28,17 +28,6 @@ public:
 	ssize_t send(const void *data, size_t size);
 	ssize_t recv(void *buffer, size_t size);
 
-
-
-
-	// template ф-и на всякий случай
-	template <typename T> ssize_t sendT(const T &value) {
-		return send(&value, sizeof(T));
-	}
-	template <typename T> ssize_t recvT(T &value) {
-		return recv(&value, sizeof(T));
-	}
-
 	bool isValid() const { return _fileDescriptor >= 0; }
 	int getFileDescriptor() const { return _fileDescriptor; }
 	void close();
