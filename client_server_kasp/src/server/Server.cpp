@@ -97,6 +97,7 @@ void Server::signalHandler(int signal) {
 }
 
 void Server::handleSignal(int signal) {
+	std::cout<<"[Server] inside handle signal";
 	switch (signal) {
 		case SIGCHLD:
 			while (true) {
