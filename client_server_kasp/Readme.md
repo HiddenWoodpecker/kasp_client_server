@@ -17,7 +17,7 @@ cd bin
 ./stats
 ```
 
-Для генерации больших файлов с набором паттернов есть скрипт [scripts/generate_large_file.py](./scripts/generate_large_file.py)
+Для генерации больших файлов с набором паттернов есть скрипт [scripts/generate_large_file.py](./scripts/generate_large_file_with_virus.py)
 
 # Замечания
  * Для имитации сложных вычислений над файлом  после поиска каждого паттерна  процесс засыпает на 2 секунды
