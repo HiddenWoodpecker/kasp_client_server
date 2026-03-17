@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	config.setConfigPath(argv[1]);
 	config.setPort(static_cast<uint16_t>(std::stoi(argv[2])));
 	// TODO: fifo
-	config.setFifoPath("/tmp/antivirus_fifo");
+	config.setFifoPath("/tmp/stats.fifo");
 	if (!config.load(config.getConfigPath())) {
 		std::cerr << "failed to load config" << std::endl;
 		return 1;

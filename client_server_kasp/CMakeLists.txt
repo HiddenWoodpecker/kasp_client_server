@@ -45,14 +45,16 @@ add_executable(client
 )
 target_link_libraries(client client_lib)
 
+add_executable(stats
+    src/stats/StatsUtil.cpp
+)
+
 enable_testing()
 find_package(GTest QUIET)
-#TODO: написать unit tests
 
 
 
 if(GTest_FOUND)
-    # Если найден установленный GTest
     add_executable(unit_tests
         tests/unit_tests.cpp
     )
@@ -60,15 +62,12 @@ if(GTest_FOUND)
     target_link_libraries(unit_tests GTest::gtest GTest::gtest_main network)
     add_test(NAME UnitTests COMMAND unit_tests)
 else()
-    # Если установленный не найден, попробуем скачать через FetchContent
     include(FetchContent)
 
-    # Используем конкретный релиз GTest
     FetchContent_Declare(
       googletest
       URL https://github.com/google/googletest/archive/release-1.12.1.tar.gz
     )
-    # Для Windows: set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 
     add_executable(unit_tests

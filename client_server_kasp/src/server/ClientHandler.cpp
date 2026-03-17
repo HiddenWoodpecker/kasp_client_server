@@ -6,8 +6,8 @@
 // TODO: сделать логгер нормальный
 
 namespace server {
-ClientHandler::ClientHandler(net::Socket socket, const Config &config)
-	: _socket(std::move(socket)), _config(config), _fileSize(0) {}
+ClientHandler::ClientHandler(net::Socket socket, const Config &config, SharedStatistics* stats)
+	: _socket(std::move(socket)), _config(config), _stats(stats) {}
 
 void ClientHandler::run() {
 	std::cout << "[ClientHandler] New client connection" << std::endl;
@@ -25,13 +25,45 @@ void ClientHandler::run() {
 		auto scanResults = scanFile(content);
 		bool isInfected = !scanResults.empty();
 		sendResult(isInfected, scanResults);
+		updateStatistics(scanResults);
 
 		std::cout << "[ClientHandler] Client handled successfully" << std::endl;
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception& e) {
 		std::cerr << "[ClientHandler] Error: " << e.what() << std::endl;
 	}
 }
 
+void ClientHandler::updateStatistics(const std::map<std::string, int>& results) {
+    if (!_stats) {
+        std::cerr << "[Worker " << getpid() << "] _stats is null!" << std::endl;
+        return;
+    }
+    
+    // Считаем общее количество угроз
+    int totalThreats = 0;
+    for (const auto& [_, count] : results) {
+        totalThreats += count;
+    }
+    
+    bool infected = !results.empty();
+    
+    std::cout << "[Worker " << getpid() << "] Updating stats: infected=" 
+              << infected << ", threats=" << totalThreats << std::endl;
+    
+    // Обновляем основные счетчики (атомарно)
+    _stats->addFile(infected, totalThreats);
+    
+    // Обновляем счетчики паттернов
+    for (const auto& [pattern, count] : results) {
+        int index = _stats->findPattern(pattern);
+        if (index >= 0) {
+            _stats->addPattern(index, count);
+            std::cout << "[Worker " << getpid() << "] Pattern '" << pattern 
+                      << "' +" << count << std::endl;
+        }
+    }
+}
 
 std::string ClientHandler::receiveFile() {
 	uint32_t size;
