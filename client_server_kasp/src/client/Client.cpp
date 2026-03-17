@@ -61,11 +61,11 @@ bool Client::sendFileContent(const std::string &content) {
 }
 
 ScanResponse Client::receiveResponse() {
-	protocol::MessageHeader header;
-	if (_socket.recvT(header.size) <= 0) {
+	uint32_t size;
+	if (_socket.recvT(size) <= 0) {
 		return ScanResponse{false, "failed to receive response", {}};
 	}
-	uint32_t size = ntohl(header.size);
+	size = ntohl(size);
 	std::cout << "[Client] got response size = " << size << std::endl;
 	if (size == 0 || size > 1024 * 1024) {
 		return ScanResponse{false, "invalid response size", {}};

@@ -20,7 +20,8 @@ TEST(LengthTest, FileSizeMatch) {
 
     std::thread serverThread([serverFd, originalSize]() {
         protocol::MessageHeader header;
-        recv(serverFd, &header.size, sizeof(header.size), 0);
+	uint32_t size = 0;
+        recv(serverFd, &size, sizeof(header.size), 0);
         uint32_t receivedSize = ntohl(header.size);
         EXPECT_EQ(receivedSize, originalSize); 
         close(serverFd);
@@ -44,9 +45,9 @@ TEST(LengthTest, ZeroLength) {
     uint32_t networkZero = htonl(0);
 
     std::thread serverThread([serverFd]() {
-        protocol::MessageHeader header;
-        recv(serverFd, &header.size, sizeof(header.size), 0);
-        uint32_t receivedSize = ntohl(header.size);
+    	uint32_t size = 0;
+        recv(serverFd, &size, sizeof(size), 0);
+        uint32_t receivedSize = ntohl(size);
         EXPECT_EQ(receivedSize, 0); 
         close(serverFd);
     });
