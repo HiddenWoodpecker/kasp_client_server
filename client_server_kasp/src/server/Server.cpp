@@ -30,14 +30,6 @@ void Server::setupFifo() {
 		_statsFifoFd = -1;
 		return;
 	}
-	_statsFifoFd = open(FIFO_PATH, O_WRONLY | O_NONBLOCK);
-	if (_statsFifoFd < 0) {
-		if (errno == ENXIO) {
-			std::cerr << "[Server fifo] no reader yet" << std::endl;
-		}
-	} else {
-		std::cout << "[Server fifo] FIFO opened successfully" << std::endl;
-	}
 }
 
 void Server::writeFifo() {
@@ -87,7 +79,7 @@ void Server::setupSignalHandlers() {
 
 	sigaction(SIGINT, &sa, nullptr);
 	sigaction(SIGTERM, &sa, nullptr);
-	signal(SIGCHLD, SIG_IGN);
+	sigaction(SIGCHLD, &sa, nullptr);
 }
 
 void Server::signalHandler(int signal) {
@@ -97,7 +89,6 @@ void Server::signalHandler(int signal) {
 }
 
 void Server::handleSignal(int signal) {
-	std::cout<<"[Server] inside handle signal";
 	switch (signal) {
 		case SIGCHLD:
 			while (true) {
@@ -109,17 +100,20 @@ void Server::handleSignal(int signal) {
 					_childProcesses.erase(it);
 				}
 				if (WIFEXITED(status)) {
-					std::cout << "[Server] Worker " << pid << " exited normally" << std::endl;
+					std::cout << "[Server] worker " << pid << " exited normally" << std::endl;
 				} else if (WIFSIGNALED(status)) {
-					std::cout << "[Server] Worker " << pid << " killed by signal " 
+					std::cout << "[Server] worker " << pid << " killed by signal " 
 							  << WTERMSIG(status) << std::endl;
 				}
 			}
 			break;
 			
-		case SIGINT:
+		case SIGINT:			
+			std::cout << "\n[Server] shutting down..." << std::endl;
+			stop();
+			break;
 		case SIGTERM:
-			std::cout << "\n[Server] Shutting down..." << std::endl;
+			std::cout << "\n[Server] shutting down..." << std::endl;
 			stop();
 			break;
 	}
@@ -189,7 +183,6 @@ void Server::cleanupWorkers() {
 	if (_childProcesses.empty()) {
 		return;
 	}
-	
 	std::cout << "[Server]waiting for " << _childProcesses.size() << " workers to finish" << std::endl; 
 	for (pid_t pid : _childProcesses) {
 		int status;

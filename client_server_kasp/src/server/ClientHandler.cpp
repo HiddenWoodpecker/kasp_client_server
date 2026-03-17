@@ -10,8 +10,6 @@ ClientHandler::ClientHandler(net::Socket socket, const Config &config, SharedSta
 	: _socket(std::move(socket)), _config(config), _stats(stats) {}
 
 void ClientHandler::run() {
-	std::cout << "[ClientHandler] New client connection" << std::endl;
-
 	try {
 
 		std::string content = receiveFile();
@@ -19,15 +17,10 @@ void ClientHandler::run() {
 			std::cerr << "[ClientHandler] Empty file received" << std::endl;
 			return;
 		}
-
-		std::cout << "[ClientHandler] Received " << content.size() << " bytes" << std::endl;
-
 		auto scanResults = scanFile(content);
 		bool isInfected = !scanResults.empty();
 		sendResult(isInfected, scanResults);
 		updateStatistics(scanResults);
-
-		std::cout << "[ClientHandler] Client handled successfully" << std::endl;
 	}
 	catch (const std::exception& e) {
 		std::cerr << "[ClientHandler] Error: " << e.what() << std::endl;
@@ -40,21 +33,15 @@ void ClientHandler::updateStatistics(const std::map<std::string, int>& results) 
 		return;
 	}
 	
-	// Считаем общее количество угроз
 	int totalThreats = 0;
 	for (const auto& [_, count] : results) {
 		totalThreats += count;
 	}
 	
 	bool infected = !results.empty();
+	std::cout << "[Worker " << getpid() << "] updating stats:infected=" << infected << ", threats=" << totalThreats << std::endl;
 	
-	std::cout << "[Worker " << getpid() << "] Updating stats: infected=" 
-			  << infected << ", threats=" << totalThreats << std::endl;
-	
-	// Обновляем основные счетчики (атомарно)
 	_stats->addFile(infected, totalThreats);
-	
-	// Обновляем счетчики паттернов
 	for (const auto& [pattern, count] : results) {
 		int index = _stats->findPattern(pattern);
 		if (index >= 0) {
@@ -85,8 +72,7 @@ std::string ClientHandler::receiveFile() {
 	return buffer;
 }
 
-//такая реализация позволяет передавать огромные файлы, но возникает проблема, когда паттерн разибивается чанками
-//UPD: решено было изменить на сканирование полного файла, ограничив размер файла, так как recv из сокета все равно будет читать чанками + упрощает реализацию
+//UPD: решено было изменить на сканирование полного файла, ограничив размер файла, так как recv из сокета все равно будет читать чанками + упрощает реализацию в плане того что чанки не разбивают вредоносный паттерн на пополам, а прирост производительности не велик, с учетом того что нормальные люди не хранят файлы по 100GB на компьютере
 std::map<std::string, int> ClientHandler::scanFile(const std::string& content) {
 	std::cout << "[ClientHandler] scanning file for patterns " << std::endl;
 	std::map<std::string, int> results; 
@@ -101,7 +87,7 @@ std::map<std::string, int> ClientHandler::scanFile(const std::string& content) {
 			results[pattern] = count;
 			std::cout << "[ClientHandler] Found pattern '" << pattern << "' " << count << std::endl;
 		}
-		// usleep(1000000);
+		usleep(2000000);
 	}
 
 	return results;
@@ -122,7 +108,6 @@ void ClientHandler::sendResult(bool isInfected, const std::map<std::string, int>
 	result["patterns"] = patternsJson;
 
 	std::string jsonString = result.dump();
-	// std::cout<<"JSON string "<< jsonString <<std::endl;
 
 	uint32_t size = htonl(static_cast<uint32_t>(jsonString.size()));
 	_socket.send(&size, sizeof(size));

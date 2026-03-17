@@ -9,6 +9,9 @@
 
 int main() {
 	int fd = open(FIFO_PATH, O_RDONLY);
+	if (fd < 0){
+		std::cerr<<"Failed to open FIFO"<<std::endl;
+	}
 	char buffer[4096];
 	ssize_t bytes = read(fd, buffer, sizeof(buffer) - 1);
 	if (bytes > 0) {

@@ -76,8 +76,7 @@ bool Socket::connect(const std::string &host, uint16_t port) {
 		return false;
 	}
 
-	if (::connect(_fileDescriptor, (struct sockaddr *)&serverAddress,
-								sizeof(serverAddress)) < 0) {
+	if (::connect(_fileDescriptor, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
 		perror("connect");
 		close();
 		return false;

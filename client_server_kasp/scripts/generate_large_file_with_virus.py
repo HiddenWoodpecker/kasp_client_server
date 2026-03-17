@@ -1,7 +1,6 @@
 import random
 import os
 
-# Вредоносные паттерны
 PATTERNS = [
         "VIRUS",
         "EVILSCRIPT",
@@ -20,4 +19,3 @@ with open("large_file.txt", "w") as f:
             f.write("0")
             size += 1
 
-print("Файл создан!")

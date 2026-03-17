@@ -18,7 +18,7 @@
 namespace server {
 
 struct SharedStatistics {
-	// Все данные внутри структуры - для shared memory
+	// Все данные внутри структуры - для shared memory поэтому они volatile
 	volatile uint64_t totalFiles;
 	volatile uint64_t infectedFiles;
 	volatile uint64_t totalThreats;
@@ -85,9 +85,8 @@ private:
 	void* _sharedMem;
 	SharedStatistics* _stats;  // Указатель на shared memory
 
-	// Поток для вывода статистики
 	std::thread _statsThread;
-		void setupSignalHandlers();
+	void setupSignalHandlers();
 	void handleSignal(int signal);
 	void acceptConnection();
 	void spawnWorker(net::Socket clientSocket);
@@ -103,10 +102,9 @@ private:
 	void setupFifo();
 	void writeFifo();
 
-	void setupSharedMemory();		   // Создание shared memory
-	void statisticsLoop();			  // Поток для вывода статистики
+	void setupSharedMemory();		   
+	void statisticsLoop();			  
 
-	// ссылка на инстанс для обработки сигналов
 	static Server *_instance;
 	static void signalHandler(int signal);
 

@@ -10,18 +10,14 @@ int main(int argc, char* argv[]) {
 	
 	std::string filePath = argv[1];
 	uint16_t port = static_cast<uint16_t>(std::stoi(argv[2]));
-	
 	client::Client client;
-	
 	if (!client.connect("127.0.0.1", port)) {
 		return 1;
 	}
-	
 	client::ScanResponse response = client.sendFile(filePath);
 	
 	std::cout << "\nScan Result\n";
 	std::cout << "Status: " << response.status << std::endl;
-	
 	if (!response.patterns.empty()) {
 		std::cout << "threats found: " << response.patterns.size() << std::endl;
 		for (const auto& pattern : response.patterns) {
@@ -30,8 +26,6 @@ int main(int argc, char* argv[]) {
 	} else {
 		std::cout << "no threats found" << std::endl;
 	}
-	
 	client.disconnect();
-	
 	return response.success ? 0 : 1;
 }
